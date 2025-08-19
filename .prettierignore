@@ -1,0 +1,12 @@
+.next
+node_modules
+public
+.gitignore
+esling.config.mjs
+next-env.d.ts
+next.config.ts
+package.json
+package-lock.json
+postcss.config.mjs
+README.md
+tsconfig.json
