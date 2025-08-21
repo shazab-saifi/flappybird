@@ -11,12 +11,29 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...compat.extends('next/core-web-vitals', 'next/typescript', 'eslint-config-prettier'),
   {
     plugins: {
       prettier,
     },
+  },
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/out/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/.git/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+    ],
+  },
+  {
     rules: {
+      indent: ['error', 2],
+      '@typescript-eslint/no-unused-vars': 'error',
+      'space-in-parens': ['error', 'never'],
       'prettier/prettier': 'error',
     },
   },

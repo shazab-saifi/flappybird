@@ -10,3 +10,4 @@ package-lock.json
 postcss.config.mjs
 README.md
 tsconfig.json
+.vscode
