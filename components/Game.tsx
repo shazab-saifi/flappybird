@@ -8,15 +8,18 @@ const Game = () => {
   const frameIdRed = useRef<number | null>(null);
   const [showButton, setShowButton] = useState<boolean>(true);
   const birdImgYRef = useRef<number>(200);
+  const birdVelocityRef = useRef<number>(0);
   const [gameOver, setGameOver] = useState(false);
 
   const buttonClasses =
     'cursor-pointer w-fit rounded-xl bg-orange-600 px-4 py-2 text-center text-xl font-bold text-white ring-2 ring-white transition-colors hover:bg-orange-500 active:bg-orange-400';
 
-  // const handler = (e: React.MouseEvent<HTMLCanvasElement>) => {
-  //   e.preventDefault();
-  //   birdImgYRef.current -= 5;
-  // };
+  const handler = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (showButton) return;
+
+    birdVelocityRef.current = -10;
+  };
 
   useEffect(() => {
     if (gameOver && frameIdRed.current !== null) {
@@ -83,12 +86,17 @@ const Game = () => {
       birdAngle += 0.1;
       const birdOffset = Math.sin(birdAngle) * 10;
 
+      if (!showButton) {
+        birdVelocityRef.current += 0.8;
+        birdImgYRef.current += birdVelocityRef.current;
+      }
+
       ctx.drawImage(backgroundImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
 
       ctx.drawImage(
         birdImg,
         200,
-        !showButton ? (birdImgYRef.current += 5) : birdImgYRef.current + birdOffset,
+        !showButton ? birdImgYRef.current : birdImgYRef.current + birdOffset,
         80,
         80
       );
@@ -99,7 +107,7 @@ const Game = () => {
       ctx.fillStyle = 'rgba(216, 195, 95, 1)';
       ctx.fillRect(0, 600, canvasRef.current.width, 100);
 
-      if (birdImgYRef.current === 520) {
+      if (birdImgYRef.current >= 520) {
         setGameOver(true);
         if (frameIdRed.current !== null) {
           cancelAnimationFrame(frameIdRed.current);
@@ -113,9 +121,7 @@ const Game = () => {
         ctx.fillRect(x, groundY, tileW, tileH);
       }
 
-      if (start) {
-        frameIdRed.current = requestAnimationFrame(animate);
-      }
+      frameIdRed.current = requestAnimationFrame(animate);
     }
 
     animate();
@@ -124,7 +130,7 @@ const Game = () => {
   return (
     <div className="relative flex w-full flex-col items-center justify-center">
       <canvas
-        // onClick={(e) => handler(e)}
+        onClick={(e) => handler(e)}
         ref={canvasRef}
         width={500}
         height={700}
@@ -160,7 +166,16 @@ const Game = () => {
           <div className="rounded-2xl bg-orange-600 px-8 py-4 text-center text-4xl font-bold text-white ring-2 ring-white">
             Game Over
           </div>
-          <button onClick={() => setStart(true)} className={buttonClasses}>
+          <button
+            onClick={() => {
+              setGameOver(false);
+              setShowButton(true);
+              setStart(false);
+              birdImgYRef.current = 200;
+              birdVelocityRef.current = 0;
+            }}
+            className={buttonClasses}
+          >
             Re-Start
           </button>
         </div>
