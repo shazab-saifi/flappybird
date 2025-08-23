@@ -10,6 +10,7 @@ const Game = () => {
   const birdImgYRef = useRef<number>(200);
   const birdVelocityRef = useRef<number>(0);
   const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
 
   const buttonClasses =
     'cursor-pointer w-fit rounded-xl bg-orange-600 px-4 py-2 text-center text-xl font-bold text-white ring-2 ring-white transition-colors hover:bg-orange-500 active:bg-orange-400';
@@ -17,8 +18,7 @@ const Game = () => {
   const handler = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (showButton) return;
-
-    birdVelocityRef.current = -10;
+    birdVelocityRef.current = -5;
   };
 
   useEffect(() => {
@@ -79,6 +79,13 @@ const Game = () => {
     const groundY = 572;
     let birdAngle = 0;
 
+    const pipes: Array<{ x: number; gapY: number; passed: boolean }> = [];
+    const pipeWidth = 80;
+    const pipeGap = 150;
+    const pipeSpeed = 3;
+    let pipeSpawnTimer = 0;
+    const pipeSpawnInterval = 120;
+
     async function animate() {
       if (!ctx || !canvasRef.current) return;
 
@@ -87,11 +94,62 @@ const Game = () => {
       const birdOffset = Math.sin(birdAngle) * 10;
 
       if (!showButton) {
-        birdVelocityRef.current += 0.8;
+        pipeSpawnTimer++;
+        if (pipeSpawnTimer >= pipeSpawnInterval) {
+          const gapY = Math.random() * (canvasRef.current.height - pipeGap - 200) + 100;
+          pipes.push({ x: canvasRef.current.width, gapY, passed: false });
+          pipeSpawnTimer = 0;
+        }
+
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          pipes[i].x -= pipeSpeed;
+
+          if (pipes[i].x + pipeWidth < 0) {
+            pipes.pop();
+            continue;
+          }
+
+          if (!pipes[i].passed && pipes[i].x + pipeWidth < 200) {
+            pipes[i].passed = true;
+            setScore((prev) => prev + 1);
+          }
+
+          const birdX = 200;
+          const birdY = birdImgYRef.current;
+          const birdSize = 80;
+
+          if (
+            birdX < pipes[i].x + pipeWidth &&
+            birdX + birdSize > pipes[i].x &&
+            (birdY < pipes[i].gapY || birdY + birdSize > pipes[i].gapY + pipeGap)
+          ) {
+            setGameOver(true);
+            if (frameIdRed.current !== null) {
+              cancelAnimationFrame(frameIdRed.current);
+            }
+            return;
+          }
+        }
+
+        birdVelocityRef.current += 0.5;
         birdImgYRef.current += birdVelocityRef.current;
       }
 
       ctx.drawImage(backgroundImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+      // Draw pipes
+      ctx.fillStyle = 'green';
+      pipes.forEach((pipe) => {
+        // Top pipe
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.gapY);
+        // Bottom pipe
+        ctx.fillRect(
+          pipe.x,
+          pipe.gapY + pipeGap,
+          pipeWidth,
+          canvasRef.current!.height - (pipe.gapY + pipeGap)
+        );
+      });
 
       ctx.drawImage(
         birdImg,
@@ -166,11 +224,15 @@ const Game = () => {
           <div className="rounded-2xl bg-orange-600 px-8 py-4 text-center text-4xl font-bold text-white ring-2 ring-white">
             Game Over
           </div>
+          <div className="rounded-2xl bg-orange-600 px-8 py-4 text-center text-2xl font-bold text-white ring-2 ring-white">
+            Score: {score}
+          </div>
           <button
             onClick={() => {
               setGameOver(false);
               setShowButton(true);
               setStart(false);
+              setScore(0);
               birdImgYRef.current = 200;
               birdVelocityRef.current = 0;
             }}
@@ -178,6 +240,11 @@ const Game = () => {
           >
             Re-Start
           </button>
+        </div>
+      )}
+      {!showButton && !gameOver && (
+        <div className="absolute top-4 left-4 rounded-2xl bg-orange-600 px-4 py-2 text-center text-2xl font-bold text-white ring-2 ring-white">
+          Score: {score}
         </div>
       )}
     </div>
